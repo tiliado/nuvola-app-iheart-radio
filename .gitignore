@@ -1,0 +1,13 @@
+Makefile
+metadata.json
+icons
+/screenshots/
+nuvola-app-iheart-radio
+eu.tiliado.NuvolaAppIheartRadio.desktop
+eu.tiliado.NuvolaAppIheartRadio.service
+eu.tiliado.NuvolaAppIheartRadio.appdata.xml
+nuvola-app-iheart-radio.metainfo.xml
+eu.tiliado.WebRuntimeAppIheartRadio.desktop
+eu.tiliado.WebRuntimeAppIheartRadio.service
+eu.tiliado.WebRuntimeAppIheartRadio.appdata.xml
+nuvola-app-iheart-radio.metainfo.xml
