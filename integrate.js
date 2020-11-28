@@ -58,16 +58,43 @@
 
   // Extract data from the web page
   WebApp.update = function () {
+    const elms = this._getElements()
     const track = {
-      title: null,
+      title: Nuvola.queryText('div[data-test="player-container"] div[data-test="player-text"] p:last-child'),
       artist: null,
-      album: null,
-      artLocation: null,
-      rating: null
+      album: Nuvola.queryText('div[data-test="player-container"] div[data-test="player-text"] p:first-child'),
+      artLocation: Nuvola.queryAttribute(
+        'div[data-test="player-container"] img[data-test="player-artwork-image"]',
+        'src',
+        src => src.replace('fit(75%2C75)', 'fit(240%2C240)')
+      ),
+      rating: null,
+      length: this._getTimeTotal()
     }
 
+    let state
+    if (elms.pause) {
+      state = PlaybackState.PLAYING
+    } else if (elms.play) {
+      state = PlaybackState.PAUSED
+    } else {
+      state = PlaybackState.UNKNOWN
+    }
+
+    player.setPlaybackState(state)
+
     player.setTrack(track)
-    player.setPlaybackState(PlaybackState.UNKNOWN)
+
+    player.setCanGoPrev(!!elms.prev)
+    player.setCanGoNext(!!elms.next)
+    player.setCanPlay(!!elms.play)
+    player.setCanPause(!!elms.pause)
+
+    player.setTrackPosition(Nuvola.queryText('div[data-test="player-container"] div[data-test="seekbar-position"]'))
+    player.setCanSeek(state !== PlaybackState.UNKNOWN && elms.progressbar)
+
+    player.updateVolume(elms.volumebar ? elms.volumebar.value / 100 : null)
+    player.setCanChangeVolume(!!elms.volumebar)
 
     // Schedule the next update
     setTimeout(this.update.bind(this), 500)
@@ -75,10 +102,68 @@
 
   // Handler of playback actions
   WebApp._onActionActivated = function (emitter, name, param) {
+    const elms = this._getElements()
     switch (name) {
-      case PlayerAction.Play:
+      case PlayerAction.TOGGLE_PLAY:
+        if (elms.play) {
+          Nuvola.clickOnElement(elms.play)
+        } else {
+          Nuvola.clickOnElement(elms.pause)
+        }
+        break
+      case PlayerAction.PLAY:
+        Nuvola.clickOnElement(elms.play)
+        break
+      case PlayerAction.PAUSE:
+      case PlayerAction.STOP:
+        Nuvola.clickOnElement(elms.pause)
+        break
+      case PlayerAction.PREV_SONG:
+        Nuvola.clickOnElement(elms.prev)
+        break
+      case PlayerAction.NEXT_SONG:
+        Nuvola.clickOnElement(elms.next)
+        break
+      case PlayerAction.SEEK: {
+        const total = Nuvola.parseTimeUsec(this._getTimeTotal())
+        Nuvola.setInputValueWithEvent(elms.progressbar, Math.round(param / 1000000) + '.1') // event 'invalid'
+        Nuvola.clickOnElement(elms.progressbar, param / total, 0.5)
+        break
+      }
+      case PlayerAction.CHANGE_VOLUME:
+        Nuvola.setInputValueWithEvent(elms.volumebar, Math.round(param * 100) + '.1') // event 'invalid'
+        Nuvola.clickOnElement(elms.volumebar, param, 0.5)
         break
     }
+  }
+
+  WebApp._getElements = function () {
+  // Interesting elements
+    const elms = {
+      play: document.querySelector(
+        'div[data-test="player-container"] button[data-test="play-button"][data-test-state="PAUSED"]'),
+      pause: document.querySelector(
+        'div[data-test="player-container"] button[data-test="play-button"][data-test-state="PLAYING"]'),
+      next: document.querySelector('div[data-test="player-container"] button[data-test="forward-30-button"]'),
+      prev: document.querySelector('div[data-test="player-container"] button[data-test="back-15-button"]'),
+      progressbar: document.querySelector(
+        'div[data-test="player-container"] div[data-test="seekbar-container"] input'),
+      volumebar: document.querySelector(
+        'div[data-test="player-container"] div[data-test="volume-container"] input')
+    }
+
+    // Ignore disabled buttons
+    for (const key in elms) {
+      if (elms[key] && elms[key].disabled) {
+        elms[key] = null
+      }
+    }
+
+    return elms
+  }
+
+  WebApp._getTimeTotal = function () {
+    return Nuvola.queryText('div[data-test="player-container"] div[data-test="seekbar-duration"]')
   }
 
   WebApp.start()
