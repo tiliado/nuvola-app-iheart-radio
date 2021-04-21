@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Jiří Janoušek <janousek.jiri@gmail.com>
+ * Copyright 2020-2021 Jiří Janoušek <janousek.jiri@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -149,7 +149,8 @@
   }
 
   WebApp._getElements = function () {
-  // Interesting elements
+    const sliders = document.querySelectorAll('div[data-test="player-container"] div[data-test="controls-container"] input')
+
     const elms = {
       play: document.querySelector(
         'div[data-test="player-container"] button[data-test="play-button"][data-test-state="PAUSED"]'),
@@ -157,10 +158,8 @@
         'div[data-test="player-container"] button[data-test="play-button"][data-test-state="PLAYING"]'),
       next: document.querySelector('div[data-test="player-container"] button[data-test="forward-30-button"]'),
       prev: document.querySelector('div[data-test="player-container"] button[data-test="back-15-button"]'),
-      progressbar: document.querySelector(
-        'div[data-test="player-container"] div[data-test="seekbar-container"] input'),
-      volumebar: document.querySelector(
-        'div[data-test="player-container"] div[data-test="volume-container"] input')
+      progressbar: sliders.length ? sliders[1] : null,
+      volumebar: sliders.length ? sliders[0] : null
     }
 
     // Ignore disabled buttons
@@ -174,7 +173,8 @@
   }
 
   WebApp._getTimeTotal = function () {
-    return Nuvola.queryText('div[data-test="player-container"] div[data-test="seekbar-duration"]')
+    const elm = document.querySelector('div[data-test="player-container"] div[data-test="seekbar-position"]')
+    return elm ? elm.parentElement.lastElementChild.textContent : null
   }
 
   WebApp.start()
